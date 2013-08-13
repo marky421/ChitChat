@@ -4,6 +4,7 @@ package com.maspain.chitchat;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
@@ -15,6 +16,7 @@ import javax.swing.Action;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 
 import java.awt.Font;
@@ -36,6 +38,7 @@ public class Client extends JFrame implements Runnable {
 	private JPanel	contentPane;
 	private String name, address;
 	private int port;
+	private JScrollPane scrollPane;
 	private JTextArea txtrHistory;
 	private JTextArea txtrMessage;
 	private JButton btnSend;
@@ -61,7 +64,7 @@ public class Client extends JFrame implements Runnable {
 			private static final long	serialVersionUID	= 1L;
 
 			public void actionPerformed(ActionEvent e) {
-				txtrMessage.setText(txtrMessage.getText() + '\n');
+				txtrMessage.append("\n");
 			}
 		};
 		String newLineKeyStrokeAndKey = "shift ENTER";
@@ -151,6 +154,7 @@ public class Client extends JFrame implements Runnable {
 				
 				// Print it to our text window
 				txtrHistory.append(message + "\n");
+				txtrHistory.setCaretPosition(txtrHistory.getDocument().getLength());
 			}
 		}
 		catch(IOException e) {
@@ -185,7 +189,9 @@ public class Client extends JFrame implements Runnable {
 		gbc_txtrHistory.gridy = 0;
 		gbc_txtrHistory.insets = new Insets(10, 10, 5, 10);
 		gbc_txtrHistory.weightx = 0.0;
-		contentPane.add(txtrHistory, gbc_txtrHistory);
+		scrollPane = new JScrollPane(txtrHistory);
+		contentPane.add(scrollPane, gbc_txtrHistory);
+		
 		
 		txtrMessage = new JTextArea();
 		txtrMessage.setWrapStyleWord(true);

@@ -5,9 +5,14 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import javax.swing.JButton;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.event.ActionListener;
@@ -93,6 +98,21 @@ public class Login extends JFrame {
 		});
 		btnLogin.setBounds(91, 294, 117, 29);
 		contentPane.add(btnLogin);
+		
+		// Create the functionality for the "ENTER" key stroke so that it logs in when pressed
+		Action loginOnEnter = new AbstractAction() {
+			private static final long	serialVersionUID	= 1L;
+
+			public void actionPerformed(ActionEvent e) {
+				String name = txtName.getText();
+				String address = txtAddress.getText();
+				int port = Integer.parseInt(txtPort.getText());
+				login(name, address, port);
+			}
+		};
+		KeyStroke loginKeyStroke = KeyStroke.getKeyStroke("ENTER");
+		InputMap im = txtPort.getInputMap(JComponent.WHEN_FOCUSED);
+		txtPort.getActionMap().put(im.get(loginKeyStroke), loginOnEnter);
 	}
 	
 	private void login(String name, String address, int port) {
