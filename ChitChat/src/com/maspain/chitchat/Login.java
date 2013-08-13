@@ -74,11 +74,11 @@ public class Login extends JFrame {
 		lblPort.setBounds(47, 178, 35, 16);
 		contentPane.add(lblPort);
 		
-		lblIPAddressDescription = new JLabel("(eg. 192.168.0.3)");
-		lblIPAddressDescription.setBounds(95, 132, 110, 16);
+		lblIPAddressDescription = new JLabel("(eg. 67.183.210.5)");
+		lblIPAddressDescription.setBounds(86, 132, 128, 16);
 		contentPane.add(lblIPAddressDescription);
 		
-		lblPortDescription = new JLabel("(eg. 8196)");
+		lblPortDescription = new JLabel("(eg. 5000)");
 		lblPortDescription.setBounds(116, 201, 68, 16);
 		contentPane.add(lblPortDescription);
 		
@@ -90,8 +90,6 @@ public class Login extends JFrame {
 				int port = Integer.parseInt(txtPort.getText());
 				login(name, address, port);
 			}
-
-
 		});
 		btnLogin.setBounds(91, 294, 117, 29);
 		contentPane.add(btnLogin);
