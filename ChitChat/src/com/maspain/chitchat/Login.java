@@ -7,7 +7,6 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
@@ -18,6 +17,9 @@ import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+
 
 public class Login extends JFrame {
 	private static final long serialVersionUID = 1L;
@@ -26,10 +28,11 @@ public class Login extends JFrame {
 	private JTextField txtName;
 	private JTextField txtAddress;
 	private JLabel lblIpAddress;
-	private JTextField txtPort;
+	private JButton btnLogin;
 	private JLabel lblPort;
 	private JLabel lblIPAddressDescription;
-	private JLabel lblPortDescription;
+	
+	private JComboBox<String> channelList;
 
 	/**
 	 * Create the frame.
@@ -45,7 +48,7 @@ public class Login extends JFrame {
 		setResizable(false);
 		setTitle("Login");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(300, 380);
+		setSize(300, 300);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -53,7 +56,7 @@ public class Login extends JFrame {
 		contentPane.setLayout(null);
 		
 		txtName = new JTextField();
-		txtName.setBounds(77, 36, 146, 28);
+		txtName.setBounds(77, 36, 185, 28);
 		contentPane.add(txtName);
 		txtName.setColumns(10);
 		
@@ -62,41 +65,39 @@ public class Login extends JFrame {
 		contentPane.add(lblName);
 		
 		txtAddress = new JTextField();
-		txtAddress.setBounds(77, 104, 146, 28);
+		txtAddress.setText("maspain.dyndns-web.com");
+		txtAddress.setBounds(77, 104, 185, 28);
 		contentPane.add(txtAddress);
 		txtAddress.setColumns(10);
 		
-		lblIpAddress = new JLabel("IP Address:");
-		lblIpAddress.setBounds(6, 110, 76, 16);
+		lblIpAddress = new JLabel("Host:");
+		lblIpAddress.setBounds(42, 110, 40, 16);
 		contentPane.add(lblIpAddress);
 		
-		txtPort = new JTextField();
-		txtPort.setBounds(77, 172, 146, 28);
-		contentPane.add(txtPort);
-		txtPort.setColumns(10);
-		
-		lblPort = new JLabel("Port:");
-		lblPort.setBounds(47, 178, 35, 16);
+		lblPort = new JLabel("Channel:");
+		lblPort.setBounds(21, 178, 61, 16);
 		contentPane.add(lblPort);
 		
 		lblIPAddressDescription = new JLabel("(eg. 67.183.210.5)");
 		lblIPAddressDescription.setBounds(86, 132, 128, 16);
 		contentPane.add(lblIPAddressDescription);
 		
-		lblPortDescription = new JLabel("(eg. 5000)");
-		lblPortDescription.setBounds(116, 201, 68, 16);
-		contentPane.add(lblPortDescription);
+		channelList = new JComboBox<String>();
+		channelList.setModel(new DefaultComboBoxModel<String>(new String[] {"Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8", "Channel 9", "Channel 10"}));
+		channelList.setSelectedIndex(0);
+		channelList.setBounds(77, 174, 185, 27);
+		contentPane.add(channelList);
 		
-		JButton btnLogin = new JButton("Login");
+		btnLogin = new JButton("Login");
 		btnLogin.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String name = txtName.getText();
 				String address = txtAddress.getText();
-				int port = Integer.parseInt(txtPort.getText());
+				int port = 50000 + channelList.getSelectedIndex();
 				login(name, address, port);
 			}
 		});
-		btnLogin.setBounds(91, 294, 117, 29);
+		btnLogin.setBounds(91, 223, 117, 29);
 		contentPane.add(btnLogin);
 		
 		// Create the functionality for the "ENTER" key stroke so that it logs in when pressed
@@ -106,13 +107,14 @@ public class Login extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				String name = txtName.getText();
 				String address = txtAddress.getText();
-				int port = Integer.parseInt(txtPort.getText());
+				int port = 50000 + channelList.getSelectedIndex();
 				login(name, address, port);
 			}
 		};
 		KeyStroke loginKeyStroke = KeyStroke.getKeyStroke("ENTER");
-		InputMap im = txtPort.getInputMap(JComponent.WHEN_FOCUSED);
-		txtPort.getActionMap().put(im.get(loginKeyStroke), loginOnEnter);
+		String aCommand = "login";
+		contentPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(loginKeyStroke, aCommand);
+		contentPane.getActionMap().put(aCommand, loginOnEnter);
 	}
 	
 	private void login(String name, String address, int port) {
@@ -120,9 +122,6 @@ public class Login extends JFrame {
 		new Client(name, address, port);
 	}
 
-	/**
-	 * Launch the application.
-	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 
