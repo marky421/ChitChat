@@ -19,6 +19,9 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
 
 
 public class Login extends JFrame {
@@ -45,7 +48,7 @@ public class Login extends JFrame {
 			e.printStackTrace();
 		}
 		
-		setResizable(false);
+		setResizable(true);
 		setTitle("Login");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(300, 300);
@@ -53,40 +56,76 @@ public class Login extends JFrame {
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
-		contentPane.setLayout(null);
-		
-		txtName = new JTextField();
-		txtName.setBounds(77, 36, 185, 28);
-		contentPane.add(txtName);
-		txtName.setColumns(10);
+		GridBagLayout gbl_contentPane = new GridBagLayout();
+		gbl_contentPane.columnWidths = new int[]{61, 176, 0};
+		gbl_contentPane.rowHeights = new int[]{36, 28, 40, 28, 16, 27, 29, 0};
+		gbl_contentPane.columnWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
+		gbl_contentPane.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+		contentPane.setLayout(gbl_contentPane);
 		
 		JLabel lblName = new JLabel("Name:");
-		lblName.setBounds(36, 42, 46, 16);
-		contentPane.add(lblName);
+		GridBagConstraints gbc_lblName = new GridBagConstraints();
+		gbc_lblName.anchor = GridBagConstraints.EAST;
+		gbc_lblName.insets = new Insets(0, 0, 5, 5);
+		gbc_lblName.gridx = 0;
+		gbc_lblName.gridy = 0;
+		contentPane.add(lblName, gbc_lblName);
+		
+		txtName = new JTextField();
+		GridBagConstraints gbc_txtName = new GridBagConstraints();
+		gbc_txtName.fill = GridBagConstraints.BOTH;
+		gbc_txtName.insets = new Insets(0, 0, 5, 0);
+		gbc_txtName.gridwidth = 2;
+		gbc_txtName.gridx = 1;
+		gbc_txtName.gridy = 0;
+		contentPane.add(txtName, gbc_txtName);
+		txtName.setColumns(10);
+		
+		lblIpAddress = new JLabel("Host:");
+		GridBagConstraints gbc_lblIpAddress = new GridBagConstraints();
+		gbc_lblIpAddress.anchor = GridBagConstraints.EAST;
+		gbc_lblIpAddress.insets = new Insets(0, 0, 5, 5);
+		gbc_lblIpAddress.gridx = 0;
+		gbc_lblIpAddress.gridy = 1;
+		contentPane.add(lblIpAddress, gbc_lblIpAddress);
 		
 		txtAddress = new JTextField();
 		txtAddress.setText("maspain.dyndns-web.com");
-		txtAddress.setBounds(77, 104, 185, 28);
-		contentPane.add(txtAddress);
+		GridBagConstraints gbc_txtAddress = new GridBagConstraints();
+		gbc_txtAddress.fill = GridBagConstraints.HORIZONTAL;
+		gbc_txtAddress.insets = new Insets(0, 0, 5, 0);
+		gbc_txtAddress.gridwidth = 2;
+		gbc_txtAddress.gridx = 1;
+		gbc_txtAddress.gridy = 1;
+		contentPane.add(txtAddress, gbc_txtAddress);
 		txtAddress.setColumns(10);
 		
-		lblIpAddress = new JLabel("Host:");
-		lblIpAddress.setBounds(42, 110, 40, 16);
-		contentPane.add(lblIpAddress);
+		lblIPAddressDescription = new JLabel("(eg. 67.183.210.5)");
+		GridBagConstraints gbc_lblIPAddressDescription = new GridBagConstraints();
+		gbc_lblIPAddressDescription.anchor = GridBagConstraints.WEST;
+		gbc_lblIPAddressDescription.insets = new Insets(0, 0, 5, 0);
+		gbc_lblIPAddressDescription.gridx = 1;
+		gbc_lblIPAddressDescription.gridy = 2;
+		contentPane.add(lblIPAddressDescription, gbc_lblIPAddressDescription);
 		
 		lblPort = new JLabel("Channel:");
-		lblPort.setBounds(21, 178, 61, 16);
-		contentPane.add(lblPort);
-		
-		lblIPAddressDescription = new JLabel("(eg. 67.183.210.5)");
-		lblIPAddressDescription.setBounds(86, 132, 128, 16);
-		contentPane.add(lblIPAddressDescription);
+		GridBagConstraints gbc_lblPort = new GridBagConstraints();
+		gbc_lblPort.insets = new Insets(0, 0, 5, 5);
+		gbc_lblPort.gridx = 0;
+		gbc_lblPort.gridy = 3;
+		contentPane.add(lblPort, gbc_lblPort);
 		
 		channelList = new JComboBox<String>();
 		channelList.setModel(new DefaultComboBoxModel<String>(new String[] {"Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8", "Channel 9", "Channel 10"}));
 		channelList.setSelectedIndex(0);
-		channelList.setBounds(77, 174, 185, 27);
-		contentPane.add(channelList);
+		GridBagConstraints gbc_channelList = new GridBagConstraints();
+		gbc_channelList.anchor = GridBagConstraints.WEST;
+		gbc_channelList.fill = GridBagConstraints.VERTICAL;
+		gbc_channelList.insets = new Insets(0, 0, 5, 0);
+		gbc_channelList.gridwidth = 2;
+		gbc_channelList.gridx = 1;
+		gbc_channelList.gridy = 3;
+		contentPane.add(channelList, gbc_channelList);
 		
 		btnLogin = new JButton("Login");
 		btnLogin.addActionListener(new ActionListener() {
@@ -97,8 +136,11 @@ public class Login extends JFrame {
 				login(name, address, port);
 			}
 		});
-		btnLogin.setBounds(91, 223, 117, 29);
-		contentPane.add(btnLogin);
+		GridBagConstraints gbc_btnLogin = new GridBagConstraints();
+		gbc_btnLogin.insets = new Insets(0, 0, 5, 0);
+		gbc_btnLogin.gridx = 1;
+		gbc_btnLogin.gridy = 5;
+		contentPane.add(btnLogin, gbc_btnLogin);
 		
 		// Create the functionality for the "ENTER" key stroke so that it logs in when pressed
 		Action loginOnEnter = new AbstractAction() {
