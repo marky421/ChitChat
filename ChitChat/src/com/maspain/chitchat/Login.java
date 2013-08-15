@@ -34,9 +34,9 @@ public class Login extends JFrame {
 	private JButton btnLogin;
 	private JLabel lblPort;
 	private JLabel lblIPAddressDescription;
-	
-	private JComboBox<String> channelList;
 
+	private JComboBox<String> channelList;
+	
 	/**
 	 * Create the frame.
 	 */

@@ -12,6 +12,7 @@ import java.awt.GridBagConstraints;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -30,10 +31,14 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import javax.swing.JComboBox;
 
 public class Client extends JFrame implements Runnable {
 	
 	private static final long serialVersionUID = 1L;
+	
+	private String title = "ChitChat Client v1.0 | Channel: ";
+	private int portOffset = 50000;
 	
 	private JPanel contentPane;
 	private String name, address;
@@ -49,14 +54,17 @@ public class Client extends JFrame implements Runnable {
 	// The streams we communicate to the server; these come from the socket
 	private DataInputStream din;
 	private DataOutputStream dout;
+	private JComboBox<String> channelList;
 	
 	public Client(String name, String address, int port) {
 
-		setTitle("ChitChat Client v1.0");
-		
 		this.name = name;
 		this.address = address;
 		this.port = port;
+		
+		int channel = port - portOffset + 1;
+		
+		setTitle(title + channel);
 
 		createWindow();
 		connectToServer();
@@ -109,6 +117,18 @@ public class Client extends JFrame implements Runnable {
 			}
 		});
 		
+		Action changeChannel = new AbstractAction() {
+			
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e) {
+				switchToPort(channelList.getSelectedIndex() + portOffset);
+			}
+		};
+		
+		channelList.addActionListener(changeChannel);
+		
+
 	}
 	
 	private void connectToServer() {
@@ -129,6 +149,11 @@ public class Client extends JFrame implements Runnable {
 		} catch (IOException ie) {
 			System.out.println(ie + " ------- in method: connectToServer()");
 		}
+	}
+	
+	private void switchToPort(int port) {
+		dispose();
+		new Client(this.name, this.address, port);
 	}
 	
 	// Gets called when the user types something
@@ -187,9 +212,9 @@ public class Client extends JFrame implements Runnable {
 		setContentPane(contentPane);
 		
 		GridBagLayout gbl_contentPane = new GridBagLayout();
-		gbl_contentPane.columnWidths = new int[] { 0, 0 };
+		gbl_contentPane.columnWidths = new int[] { 0, 0, 0 };
 		gbl_contentPane.rowHeights = new int[] { 0, 0 };
-		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0 };
+		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0, 1.0 };
 		gbl_contentPane.rowWeights = new double[] { 1.0, 0.001 };
 		contentPane.setLayout(gbl_contentPane);
 		
@@ -200,7 +225,7 @@ public class Client extends JFrame implements Runnable {
 		txtrHistory.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
 		GridBagConstraints gbc_txtrHistory = new GridBagConstraints();
 		gbc_txtrHistory.fill = GridBagConstraints.BOTH;
-		gbc_txtrHistory.gridwidth = 2;
+		gbc_txtrHistory.gridwidth = 3;
 		gbc_txtrHistory.gridx = 0;
 		gbc_txtrHistory.gridy = 0;
 		gbc_txtrHistory.insets = new Insets(10, 10, 5, 10);
@@ -226,6 +251,14 @@ public class Client extends JFrame implements Runnable {
 		gbc_btnSend.gridx = 1;
 		gbc_btnSend.gridy = 1;
 		contentPane.add(btnSend, gbc_btnSend);
+		
+		channelList = new JComboBox<String>();
+		channelList.setModel(new DefaultComboBoxModel<String>(new String[] {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
+		channelList.setSelectedIndex(port - portOffset);
+		GridBagConstraints gbc_channelList = new GridBagConstraints();
+		gbc_channelList.gridx = 2;
+		gbc_channelList.gridy = 1;
+		contentPane.add(channelList, gbc_channelList);
 		
 		setVisible(true);
 	}
