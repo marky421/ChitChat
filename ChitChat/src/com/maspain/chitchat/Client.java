@@ -24,6 +24,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -37,7 +39,8 @@ public class Client extends JFrame implements Runnable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private String title = "ChitChat Client v1.0 | Channel: ";
+	private String version = "1.1";
+	private String title = "ChitChat Client v" + version + " | Channel: ";
 	private int portOffset = 50000;
 	
 	private JPanel contentPane;
@@ -146,12 +149,21 @@ public class Client extends JFrame implements Runnable {
 			
 			// Start a background thread for receiving messages
 			new Thread(this).start();
+			
+			// Let everyone know you're here!
+			dout.writeUTF(name + " has entered the room");
 		} catch (IOException ie) {
 			System.out.println(ie + " ------- in method: connectToServer()");
 		}
 	}
 	
 	private void switchToPort(int port) {
+		try {
+			dout.writeUTF(name + " has left the room");
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
 		dispose();
 		new Client(this.name, this.address, port);
 	}
@@ -198,13 +210,35 @@ public class Client extends JFrame implements Runnable {
 		
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+		}
+		catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 				| UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
 		}
 
 		
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		WindowListener exitListener = new WindowListener() {
+			public void windowClosing(WindowEvent e) {
+				try {
+					dout.writeUTF(name + " has left the room");
+					dispose();
+					System.exit(0);
+				}
+				catch (IOException ie) {
+					ie.printStackTrace();
+				}
+			}
+
+			public void windowOpened(WindowEvent e) {}
+			public void windowClosed(WindowEvent e) {}
+			public void windowIconified(WindowEvent e) {}
+			public void windowDeiconified(WindowEvent e) {}
+			public void windowActivated(WindowEvent e) {}
+			public void windowDeactivated(WindowEvent e) {}
+		};
+		addWindowListener(exitListener);
+		
 		setSize(400, 400);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
@@ -247,7 +281,7 @@ public class Client extends JFrame implements Runnable {
 		btnSend = new JButton("Send");
 		GridBagConstraints gbc_btnSend = new GridBagConstraints();
 		gbc_btnSend.fill = GridBagConstraints.BOTH;
-		gbc_btnSend.insets = new Insets(5, 5, 10, 10);
+		gbc_btnSend.insets = new Insets(5, 5, 10, 5);
 		gbc_btnSend.gridx = 1;
 		gbc_btnSend.gridy = 1;
 		contentPane.add(btnSend, gbc_btnSend);
@@ -256,6 +290,8 @@ public class Client extends JFrame implements Runnable {
 		channelList.setModel(new DefaultComboBoxModel<String>(new String[] {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
 		channelList.setSelectedIndex(port - portOffset);
 		GridBagConstraints gbc_channelList = new GridBagConstraints();
+		gbc_channelList.fill = GridBagConstraints.BOTH;
+		gbc_channelList.insets = new Insets(5, 5, 10, 10);
 		gbc_channelList.gridx = 2;
 		gbc_channelList.gridy = 1;
 		contentPane.add(channelList, gbc_channelList);
