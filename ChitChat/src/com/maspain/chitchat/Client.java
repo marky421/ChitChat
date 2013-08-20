@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import java.awt.Color;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
@@ -12,6 +13,7 @@ import java.awt.GridBagConstraints;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.InputMap;
 import javax.swing.JButton;
@@ -34,6 +36,9 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import javax.swing.JSplitPane;
 
 public class Client extends JFrame implements Runnable {
 	
@@ -42,13 +47,15 @@ public class Client extends JFrame implements Runnable {
 	private String version = "1.1";
 	private String title = "ChitChat Client v" + version + " | Channel: ";
 	private int portOffset = 50000;
+	private String arrivedMessage = " has enterend the room";
+	private String leavingMessage = " has left the room";
 	
 	private JPanel contentPane;
 	private String name, address;
 	private int port;
-	private JScrollPane scrollPane;
-	private JTextArea txtrHistory;
-	private JTextArea txtrMessage;
+	private JScrollPane scrollPaneHistory;
+	private JTextArea txtHistory;
+	private JTextArea txtOnlineUsers;
 	private JButton btnSend;
 	
 	// The Socket connection us to the server
@@ -58,6 +65,11 @@ public class Client extends JFrame implements Runnable {
 	private DataInputStream din;
 	private DataOutputStream dout;
 	private JComboBox<String> channelList;
+	private JScrollPane scrollPaneOnlineUsers;
+	private JLabel lblOnline;
+	private JSplitPane splitPane;
+	private JTextArea txtMessage;
+	
 	
 	public Client(String name, String address, int port) {
 
@@ -79,14 +91,13 @@ public class Client extends JFrame implements Runnable {
 			private static final long serialVersionUID = 1L;
 			
 			public void actionPerformed(ActionEvent e) {
-				txtrMessage.append("\n");
+				txtMessage.append("\n");
 			}
 		};
 		String newLineKeyStrokeAndKey = "shift ENTER";
 		KeyStroke newLineKeyStroke = KeyStroke.getKeyStroke(newLineKeyStrokeAndKey);
-		txtrMessage.getInputMap(JComponent.WHEN_FOCUSED).put(newLineKeyStroke,
-				newLineKeyStrokeAndKey);
-		txtrMessage.getActionMap().put(newLineKeyStrokeAndKey, newLineOnShiftEnter);
+		txtMessage.getInputMap(JComponent.WHEN_FOCUSED).put(newLineKeyStroke, newLineKeyStrokeAndKey);
+		txtMessage.getActionMap().put(newLineKeyStrokeAndKey, newLineOnShiftEnter);
 		
 		// Replace the functionality of the "ENTER" key stroke so that it sends the message
 		// rather than generate a new line in the message to be sent
@@ -96,7 +107,7 @@ public class Client extends JFrame implements Runnable {
 			
 			public void actionPerformed(ActionEvent e) {
 				try {
-					processMessage(txtrMessage.getText());
+					processMessage(txtMessage.getText());
 				}
 				catch (NullPointerException ne) {
 					System.out.println("message is empty. exception: " + ne);
@@ -104,15 +115,15 @@ public class Client extends JFrame implements Runnable {
 			}
 		};
 		KeyStroke sendKeyStroke = KeyStroke.getKeyStroke("ENTER");
-		InputMap im = txtrMessage.getInputMap(JComponent.WHEN_FOCUSED);
-		txtrMessage.getActionMap().put(im.get(sendKeyStroke), sendOnEnter);
+		InputMap im = txtMessage.getInputMap(JComponent.WHEN_FOCUSED);
+		txtMessage.getActionMap().put(im.get(sendKeyStroke), sendOnEnter);
 		
 		// Attach the send action to the send button
 		btnSend.addActionListener(new ActionListener() {
 			
 			public void actionPerformed(ActionEvent e) {
 				try {
-					processMessage(txtrMessage.getText());
+					processMessage(txtMessage.getText());
 				}
 				catch (NullPointerException ne) {
 					System.out.println("message is empty. exception: " + ne);
@@ -150,20 +161,20 @@ public class Client extends JFrame implements Runnable {
 			// Start a background thread for receiving messages
 			new Thread(this).start();
 			
+			// Prepare the data packet for sending as a new connection 
+			Packet packet = new Packet(Packet.CONNECT, name, name);
+
 			// Let everyone know you're here!
-			dout.writeUTF(name + " has entered the room");
-		} catch (IOException ie) {
-			System.out.println(ie + " ------- in method: connectToServer()");
+			dout.writeUTF(packet.getData());
+			
+		}
+		catch (IOException ie) {
+			ie.printStackTrace();
 		}
 	}
 	
 	private void switchToPort(int port) {
-		try {
-			dout.writeUTF(name + " has left the room");
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		leave();
 		dispose();
 		new Client(this.name, this.address, port);
 	}
@@ -172,17 +183,36 @@ public class Client extends JFrame implements Runnable {
 	private void processMessage(String message) {
 		try {
 			
-			// Create a time stamp for the current message
-			String timeStamp = new SimpleDateFormat("MMM dd @ hh:mm:ss aaa").format(Calendar
-					.getInstance().getTime());
+			// Attach a time stamp to the current message
+			String formattedMessage = " (" + getTimeStamp() + "): " + message;
+			
+			// Prepare the data packet for sending as a message
+			Packet packet = new Packet(Packet.MESSAGE, name, name + formattedMessage);
 			
 			// Send the message with the time stamp and the name of the sender to the server
-			dout.writeUTF(name + " (" + timeStamp + "): " + message);
+			dout.writeUTF(packet.getData());
 			
 			// Clear out the text input field
-			txtrMessage.setText("");
-		} catch (IOException ie) {
+			txtMessage.setText("");
+		}
+		catch (IOException ie) {
 			System.out.println(ie);
+		}
+	}
+	
+	private String getTimeStamp() {
+		// Create a time stamp for the current message, and attach it to the message
+		String timeStamp = new SimpleDateFormat("hh:mm:ss aaa").format(Calendar.getInstance().getTime());
+		return timeStamp;
+	}
+	
+	private void leave() {
+		Packet packet = new Packet(Packet.DISCONNECT, name, name);
+		try {
+			dout.writeUTF(packet.getData());
+		}
+		catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -193,12 +223,27 @@ public class Client extends JFrame implements Runnable {
 			// Receive messages one-by-one, forever
 			while (true) {
 				
-				// Get the next message
-				String message = din.readUTF();
+				// Get the next data string
+				String data = din.readUTF();
 				
-				// Print it to our text window
-				txtrHistory.append(message + "\n");
-				txtrHistory.setCaretPosition(txtrHistory.getDocument().getLength());
+				Packet packet = new Packet(data);
+				
+				if (packet.getCommand().equals(Packet.CONNECT)) {
+					txtHistory.append("(" + getTimeStamp() + ") " + packet.getSender() + arrivedMessage + "\n");
+					txtOnlineUsers.setText(packet.getMessage());
+				}
+				else if (packet.getCommand().equals(Packet.DISCONNECT)) {
+					txtHistory.append("(" + getTimeStamp() + ") " + packet.getSender() + leavingMessage + "\n");
+					txtOnlineUsers.setText(packet.getMessage());
+				}
+				else if (packet.getCommand().equals(Packet.MESSAGE)) {
+					// Print it to our text window
+					txtHistory.append(packet.getMessage() + "\n");
+
+				}
+				
+				// Set the caret position to the bottom of the message history field
+				txtHistory.setCaretPosition(txtHistory.getDocument().getLength());
 			}
 		}
 		catch (IOException ie) {
@@ -220,14 +265,9 @@ public class Client extends JFrame implements Runnable {
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		WindowListener exitListener = new WindowListener() {
 			public void windowClosing(WindowEvent e) {
-				try {
-					dout.writeUTF(name + " has left the room");
-					dispose();
-					System.exit(0);
-				}
-				catch (IOException ie) {
-					ie.printStackTrace();
-				}
+				leave();
+				dispose();
+				System.exit(0);
 			}
 
 			public void windowOpened(WindowEvent e) {}
@@ -239,44 +279,63 @@ public class Client extends JFrame implements Runnable {
 		};
 		addWindowListener(exitListener);
 		
-		setSize(400, 400);
+		setSize(600, 530);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		
 		GridBagLayout gbl_contentPane = new GridBagLayout();
-		gbl_contentPane.columnWidths = new int[] { 0, 0, 0 };
-		gbl_contentPane.rowHeights = new int[] { 0, 0 };
-		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0, 1.0 };
-		gbl_contentPane.rowWeights = new double[] { 1.0, 0.001 };
+		gbl_contentPane.columnWidths = new int[] {0, 0, 0};
+		gbl_contentPane.rowHeights = new int[] {0, 0};
+		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0, 0.0 };
+		gbl_contentPane.rowWeights = new double[] { 1.0, 0.0 };
 		contentPane.setLayout(gbl_contentPane);
 		
-		txtrHistory = new JTextArea();
-		txtrHistory.setWrapStyleWord(true);
-		txtrHistory.setLineWrap(true);
-		txtrHistory.setEditable(false);
-		txtrHistory.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
-		GridBagConstraints gbc_txtrHistory = new GridBagConstraints();
-		gbc_txtrHistory.fill = GridBagConstraints.BOTH;
-		gbc_txtrHistory.gridwidth = 3;
-		gbc_txtrHistory.gridx = 0;
-		gbc_txtrHistory.gridy = 0;
-		gbc_txtrHistory.insets = new Insets(10, 10, 5, 10);
-		gbc_txtrHistory.weightx = 0.0;
-		scrollPane = new JScrollPane(txtrHistory);
-		contentPane.add(scrollPane, gbc_txtrHistory);
+		splitPane = new JSplitPane();
+		splitPane.setBorder(BorderFactory.createLineBorder(Color.black));
+		GridBagConstraints gbc_splitPane = new GridBagConstraints();
+		gbc_splitPane.gridwidth = 3;
+		gbc_splitPane.insets = new Insets(10, 10, 5, 10);
+		gbc_splitPane.fill = GridBagConstraints.BOTH;
+		gbc_splitPane.gridx = 0;
+		gbc_splitPane.gridy = 0;
+		contentPane.add(splitPane, gbc_splitPane);
+		scrollPaneHistory = new JScrollPane();
+		splitPane.setLeftComponent(scrollPaneHistory);
 		
-		txtrMessage = new JTextArea();
-		txtrMessage.setWrapStyleWord(true);
-		txtrMessage.setLineWrap(true);
-		txtrMessage.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
-		GridBagConstraints gbc_txtrMessage = new GridBagConstraints();
-		gbc_txtrMessage.insets = new Insets(5, 10, 10, 5);
-		gbc_txtrMessage.fill = GridBagConstraints.BOTH;
-		gbc_txtrMessage.gridx = 0;
-		gbc_txtrMessage.gridy = 1;
-		contentPane.add(txtrMessage, gbc_txtrMessage);
+		txtHistory = new JTextArea();
+		scrollPaneHistory.setViewportView(txtHistory);
+		txtHistory.setWrapStyleWord(true);
+		txtHistory.setLineWrap(true);
+		txtHistory.setEditable(false);
+		txtHistory.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
+		
+		scrollPaneOnlineUsers = new JScrollPane();
+		splitPane.setRightComponent(scrollPaneOnlineUsers);
+		
+		txtOnlineUsers = new JTextArea();
+		txtOnlineUsers.setEditable(false);
+		txtOnlineUsers.setBackground(Color.WHITE);
+		scrollPaneOnlineUsers.setViewportView(txtOnlineUsers);
+		
+		lblOnline = new JLabel("Online");
+		scrollPaneOnlineUsers.setColumnHeaderView(lblOnline);
+		lblOnline.setHorizontalAlignment(SwingConstants.CENTER);
+		lblOnline.setBorder(BorderFactory.createLineBorder(Color.green));
+		
+		txtMessage = new JTextArea();
+		txtMessage.setBorder(BorderFactory.createLineBorder(Color.black));
+		txtMessage.setWrapStyleWord(true);
+		txtMessage.setTabSize(4);
+		txtMessage.setLineWrap(true);
+		txtMessage.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
+		GridBagConstraints gbc_txtMessage = new GridBagConstraints();
+		gbc_txtMessage.insets = new Insets(5, 10, 10, 5);
+		gbc_txtMessage.fill = GridBagConstraints.BOTH;
+		gbc_txtMessage.gridx = 0;
+		gbc_txtMessage.gridy = 1;
+		contentPane.add(txtMessage, gbc_txtMessage);
 		
 		btnSend = new JButton("Send");
 		GridBagConstraints gbc_btnSend = new GridBagConstraints();
@@ -295,7 +354,9 @@ public class Client extends JFrame implements Runnable {
 		gbc_channelList.gridx = 2;
 		gbc_channelList.gridy = 1;
 		contentPane.add(channelList, gbc_channelList);
-		
+
 		setVisible(true);
+		int pos = txtMessage.getSize().width + (splitPane.getDividerSize() / 2);
+		splitPane.setDividerLocation(pos);
 	}
 }
