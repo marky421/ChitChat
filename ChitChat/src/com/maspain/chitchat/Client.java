@@ -44,10 +44,10 @@ public class Client extends JFrame implements Runnable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private String version = "1.1";
+	private String version = "1.3";
 	private String title = "ChitChat Client v" + version + " | Channel: ";
 	private int portOffset = 50000;
-	private String arrivedMessage = " has enterend the room";
+	private String arrivedMessage = " has entered the room";
 	private String leavingMessage = " has left the room";
 	
 	private JPanel contentPane;
@@ -184,10 +184,10 @@ public class Client extends JFrame implements Runnable {
 		try {
 			
 			// Attach a time stamp to the current message
-			String formattedMessage = " (" + getTimeStamp() + "): " + message;
+			String formattedMessage = "(" + getTimeStamp() + ") " + name + ":  " + message;
 			
 			// Prepare the data packet for sending as a message
-			Packet packet = new Packet(Packet.MESSAGE, name, name + formattedMessage);
+			Packet packet = new Packet(Packet.MESSAGE, name, formattedMessage);
 			
 			// Send the message with the time stamp and the name of the sender to the server
 			dout.writeUTF(packet.getData());
@@ -229,17 +229,31 @@ public class Client extends JFrame implements Runnable {
 				Packet packet = new Packet(data);
 				
 				if (packet.getCommand().equals(Packet.CONNECT)) {
+					// Print hello message to our text window
 					txtHistory.append("(" + getTimeStamp() + ") " + packet.getSender() + arrivedMessage + "\n");
+					
+					// Refresh the list of online users
 					txtOnlineUsers.setText(packet.getMessage());
+					
+					// Play hello sound
+					Sound.sound_beeps.play();
 				}
 				else if (packet.getCommand().equals(Packet.DISCONNECT)) {
+					// Print goodbye message to our text window
 					txtHistory.append("(" + getTimeStamp() + ") " + packet.getSender() + leavingMessage + "\n");
+					
+					// Refresh the list of online users
 					txtOnlineUsers.setText(packet.getMessage());
+					
+					// Play goodbye sound
+					Sound.sound_click.play();
 				}
 				else if (packet.getCommand().equals(Packet.MESSAGE)) {
-					// Print it to our text window
+					// Print message to our text window
 					txtHistory.append(packet.getMessage() + "\n");
-
+					
+					// Play a sound to indicate that a message has been received
+					Sound.sound_pop.play();
 				}
 				
 				// Set the caret position to the bottom of the message history field
@@ -305,6 +319,7 @@ public class Client extends JFrame implements Runnable {
 		splitPane.setLeftComponent(scrollPaneHistory);
 		
 		txtHistory = new JTextArea();
+		txtHistory.setTabSize(4);
 		scrollPaneHistory.setViewportView(txtHistory);
 		txtHistory.setWrapStyleWord(true);
 		txtHistory.setLineWrap(true);
@@ -315,11 +330,14 @@ public class Client extends JFrame implements Runnable {
 		splitPane.setRightComponent(scrollPaneOnlineUsers);
 		
 		txtOnlineUsers = new JTextArea();
+		txtOnlineUsers.setTabSize(4);
+		txtOnlineUsers.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
 		txtOnlineUsers.setEditable(false);
 		txtOnlineUsers.setBackground(Color.WHITE);
 		scrollPaneOnlineUsers.setViewportView(txtOnlineUsers);
 		
 		lblOnline = new JLabel("Online");
+		lblOnline.setFont(new Font("Helvetica Neue", Font.BOLD, 16));
 		scrollPaneOnlineUsers.setColumnHeaderView(lblOnline);
 		lblOnline.setHorizontalAlignment(SwingConstants.CENTER);
 		lblOnline.setBorder(BorderFactory.createLineBorder(Color.green));

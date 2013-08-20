@@ -30,6 +30,7 @@ public class Packet {
 		data = command + delimiter + sender + delimiter + message;
 	}
 	
+	// Designed to handle a 3-segment data stream that is separated twice by the delimiter
 	private void parse() {
 		
 		int lastPos = 0;
@@ -48,7 +49,7 @@ public class Packet {
 				cursor[j] = data.charAt(i + j);
 			}
 			
-			if (String.copyValueOf(cursor).toString().equals(delimiter)) {
+			if (String.copyValueOf(cursor).equals(delimiter)) {
 				
 				switch (segment) {
 					case 0:
@@ -60,7 +61,7 @@ public class Packet {
 					default: break;
 				}
 				
-				lastPos = i + 2;
+				lastPos = i + delimiter.length();
 				segment++;
 			}
 		}
