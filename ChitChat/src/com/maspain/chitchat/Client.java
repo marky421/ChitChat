@@ -50,11 +50,14 @@ public class Client extends JFrame implements Runnable {
 	private String arrivedMessage = " has entered the room";
 	private String leavingMessage = " has left the room";
 	
+	private int green = 0x07BA07;
+	
 	private JPanel contentPane;
 	private String name, address;
 	private int port;
 	private JScrollPane scrollPaneHistory;
-	private JTextArea txtHistory;
+	//private JTextArea txtHistory;	// JTextArea does not support font styling
+	private ColorPane txtHistory;
 	private JTextArea txtOnlineUsers;
 	private JButton btnSend;
 	
@@ -162,7 +165,7 @@ public class Client extends JFrame implements Runnable {
 			new Thread(this).start();
 			
 			// Prepare the data packet for sending as a new connection 
-			Packet packet = new Packet(Packet.CONNECT, name, name);
+			Packet packet = new Packet(Packet.CONNECT, name, arrivedMessage);
 
 			// Let everyone know you're here!
 			dout.writeUTF(packet.getData());
@@ -182,12 +185,8 @@ public class Client extends JFrame implements Runnable {
 	// Gets called when the user types something
 	private void processMessage(String message) {
 		try {
-			
-			// Attach a time stamp to the current message
-			String formattedMessage = "(" + getTimeStamp() + ") " + name + ":  " + message;
-			
 			// Prepare the data packet for sending as a message
-			Packet packet = new Packet(Packet.MESSAGE, name, formattedMessage);
+			Packet packet = new Packet(Packet.MESSAGE, name, message);
 			
 			// Send the message with the time stamp and the name of the sender to the server
 			dout.writeUTF(packet.getData());
@@ -207,7 +206,7 @@ public class Client extends JFrame implements Runnable {
 	}
 	
 	private void leave() {
-		Packet packet = new Packet(Packet.DISCONNECT, name, name);
+		Packet packet = new Packet(Packet.DISCONNECT, name, leavingMessage);
 		try {
 			dout.writeUTF(packet.getData());
 		}
@@ -228,9 +227,17 @@ public class Client extends JFrame implements Runnable {
 				
 				Packet packet = new Packet(data);
 				
+				if (packet.getMessage() == null) {
+					continue;
+				}
+				
+				// Print a time stamp for the current message, then print the name of the sender
+				txtHistory.append(Color.darkGray, "(" + getTimeStamp() + ") ");
+				txtHistory.append(Color.blue, packet.getSender());
+				
 				if (packet.getCommand().equals(Packet.CONNECT)) {
-					// Print hello message to our text window
-					txtHistory.append("(" + getTimeStamp() + ") " + packet.getSender() + arrivedMessage + "\n");
+					// Print welcome message to our text window
+					txtHistory.append(new Color(green), arrivedMessage + "\n");
 					
 					// Refresh the list of online users
 					txtOnlineUsers.setText(packet.getMessage());
@@ -240,7 +247,7 @@ public class Client extends JFrame implements Runnable {
 				}
 				else if (packet.getCommand().equals(Packet.DISCONNECT)) {
 					// Print goodbye message to our text window
-					txtHistory.append("(" + getTimeStamp() + ") " + packet.getSender() + leavingMessage + "\n");
+					txtHistory.append(Color.red, leavingMessage + "\n");
 					
 					// Refresh the list of online users
 					txtOnlineUsers.setText(packet.getMessage());
@@ -248,9 +255,12 @@ public class Client extends JFrame implements Runnable {
 					// Play goodbye sound
 					Sound.sound_click.play();
 				}
-				else if (packet.getCommand().equals(Packet.MESSAGE)) {
+				else if (packet.getCommand().equals(Packet.MESSAGE)) {		
+					// Append colon for message styling
+					txtHistory.append(Color.blue, ":  ");
+					
 					// Print message to our text window
-					txtHistory.append(packet.getMessage() + "\n");
+					txtHistory.append(Color.black, packet.getMessage() + "\n");
 					
 					// Play a sound to indicate that a message has been received
 					Sound.sound_pop.play();
@@ -318,11 +328,13 @@ public class Client extends JFrame implements Runnable {
 		scrollPaneHistory = new JScrollPane();
 		splitPane.setLeftComponent(scrollPaneHistory);
 		
-		txtHistory = new JTextArea();
-		txtHistory.setTabSize(4);
+		// for using JTextArea (does not support font styles)
+		//txtHistory = new JTextArea();
+		//txtHistory.setTabSize(4);
+		//txtHistory.setWrapStyleWord(true);
+		//txtHistory.setLineWrap(true);
+		txtHistory = new ColorPane();
 		scrollPaneHistory.setViewportView(txtHistory);
-		txtHistory.setWrapStyleWord(true);
-		txtHistory.setLineWrap(true);
 		txtHistory.setEditable(false);
 		txtHistory.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
 		
@@ -340,7 +352,7 @@ public class Client extends JFrame implements Runnable {
 		lblOnline.setFont(new Font("Helvetica Neue", Font.BOLD, 16));
 		scrollPaneOnlineUsers.setColumnHeaderView(lblOnline);
 		lblOnline.setHorizontalAlignment(SwingConstants.CENTER);
-		lblOnline.setBorder(BorderFactory.createLineBorder(Color.green));
+		lblOnline.setBorder(BorderFactory.createLineBorder(new Color(green)));
 		
 		txtMessage = new JTextArea();
 		txtMessage.setBorder(BorderFactory.createLineBorder(Color.black));
