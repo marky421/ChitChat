@@ -150,14 +150,12 @@ public class Client extends JFrame implements Runnable {
 	
 	private void connectToServer() {
 		try {
-
 			socket = new Socket(InetAddress.getByName(address), port);
-
+			
 			// We got a connection! Tell the world
 			System.out.println("connected to " + socket);
 			
-			// Let's grab the streams and create DataInput/Output streams from
-			// them
+			// Let's grab the streams and create DataInput/Output streams from them
 			din = new DataInputStream(socket.getInputStream());
 			dout = new DataOutputStream(socket.getOutputStream());
 			
@@ -280,8 +278,7 @@ public class Client extends JFrame implements Runnable {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		}
-		catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-				| UnsupportedLookAndFeelException e) {
+		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
 		}
 

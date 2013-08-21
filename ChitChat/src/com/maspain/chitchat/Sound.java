@@ -2,14 +2,11 @@ package com.maspain.chitchat;
 
 import java.applet.Applet;
 import java.applet.AudioClip;
-import java.io.File;
-import java.net.MalformedURLException;
 
 
 public class Sound {
 	
-	private static String path = "res/sounds/";
-	private File wavFile;
+	private static String path = "/sounds/";
 	private AudioClip clip;
 	
 	public static Sound sound_beeps = new Sound(path + "sound_beeps.wav");
@@ -21,12 +18,7 @@ public class Sound {
 	public static Sound sound_snap = new Sound(path + "sound_snap.wav");
 	
 	public Sound(String fileName) {
-		wavFile = new File(fileName); 
-		try {
-			clip = Applet.newAudioClip(wavFile.toURI().toURL());
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
+		clip = Applet.newAudioClip(getClass().getResource(fileName));
 	}
 	
 	public void play() {
