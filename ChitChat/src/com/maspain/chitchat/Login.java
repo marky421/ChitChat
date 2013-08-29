@@ -1,6 +1,6 @@
 package com.maspain.chitchat;
 
-import java.awt.EventQueue;
+//import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -162,19 +162,5 @@ public class Login extends JFrame {
 	private void login(String name, String address, int port) {
 		dispose();
 		new Client(name, address, port);
-	}
-
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-
-			public void run() {
-				try {
-					Login frame = new Login();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
 	}
 }
