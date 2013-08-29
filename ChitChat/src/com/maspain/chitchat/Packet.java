@@ -37,7 +37,7 @@ public class Packet {
 		int segment = 0;
 		char[] cursor = new char[delimiter.length()];
 		
-		for (int i = 0; i < data.length() - 1; i++) {
+		for (int i = 0; i <= data.length() - delimiter.length(); i++) {
 			
 			if (segment == 2) {
 				message = data.substring(lastPos);

@@ -46,6 +46,8 @@ public class Client extends JFrame implements Runnable {
 	
 	private String version = "1.3";
 	private String title = "ChitChat Client v" + version + " | Channel: ";
+	private int height = 530;
+	private int width =  600;
 	private int portOffset = 50000;
 	private String arrivedMessage = " has entered the room";
 	private String leavingMessage = " has left the room";
@@ -72,6 +74,7 @@ public class Client extends JFrame implements Runnable {
 	private JLabel lblOnline;
 	private JSplitPane splitPane;
 	private JTextArea txtMessage;
+	private JButton btnClear;
 	
 	
 	public Client(String name, String address, int port) {
@@ -134,6 +137,15 @@ public class Client extends JFrame implements Runnable {
 			}
 		});
 		
+		// Attach clear history action to clear button
+		btnClear.addActionListener(new ActionListener() {
+			
+			public void actionPerformed(ActionEvent e) {
+				txtHistory.setText("");
+			}
+		});
+		
+		// Attach channel switching action to channel list pulldown menu
 		Action changeChannel = new AbstractAction() {
 			
 			private static final long serialVersionUID = 1L;
@@ -216,10 +228,10 @@ public class Client extends JFrame implements Runnable {
 	// Background thread runs this: show messages from other window
 	public void run() {
 		try {
-			
+
 			// Receive messages one-by-one, forever
 			while (true) {
-				
+
 				// Get the next data string
 				String data = din.readUTF();
 				
@@ -300,23 +312,23 @@ public class Client extends JFrame implements Runnable {
 		};
 		addWindowListener(exitListener);
 		
-		setSize(600, 530);
+		setSize(width, height);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		
 		GridBagLayout gbl_contentPane = new GridBagLayout();
-		gbl_contentPane.columnWidths = new int[] {0, 0, 0};
+		gbl_contentPane.columnWidths = new int[] {0, 0, 0, 0};
 		gbl_contentPane.rowHeights = new int[] {0, 0};
-		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0, 0.0 };
+		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0, 0.0, 0.0 };
 		gbl_contentPane.rowWeights = new double[] { 1.0, 0.0 };
 		contentPane.setLayout(gbl_contentPane);
 		
 		splitPane = new JSplitPane();
 		splitPane.setBorder(BorderFactory.createLineBorder(Color.black));
 		GridBagConstraints gbc_splitPane = new GridBagConstraints();
-		gbc_splitPane.gridwidth = 3;
+		gbc_splitPane.gridwidth = 4;
 		gbc_splitPane.insets = new Insets(10, 10, 5, 10);
 		gbc_splitPane.fill = GridBagConstraints.BOTH;
 		gbc_splitPane.gridx = 0;
@@ -372,18 +384,26 @@ public class Client extends JFrame implements Runnable {
 		gbc_btnSend.gridy = 1;
 		contentPane.add(btnSend, gbc_btnSend);
 		
+		btnClear = new JButton("Clear");
+		GridBagConstraints gbc_btnClear = new GridBagConstraints();
+		gbc_btnClear.fill = GridBagConstraints.BOTH;
+		gbc_btnClear.insets = new Insets(5, 5, 10, 5);
+		gbc_btnClear.gridx = 2;
+		gbc_btnClear.gridy = 1;
+		contentPane.add(btnClear, gbc_btnClear);
+		
 		channelList = new JComboBox<String>();
 		channelList.setModel(new DefaultComboBoxModel<String>(new String[] {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
 		channelList.setSelectedIndex(port - portOffset);
 		GridBagConstraints gbc_channelList = new GridBagConstraints();
 		gbc_channelList.fill = GridBagConstraints.BOTH;
 		gbc_channelList.insets = new Insets(5, 5, 10, 10);
-		gbc_channelList.gridx = 2;
+		gbc_channelList.gridx = 3;
 		gbc_channelList.gridy = 1;
 		contentPane.add(channelList, gbc_channelList);
 
 		setVisible(true);
-		int pos = txtMessage.getSize().width + (splitPane.getDividerSize() / 2);
+		int pos = width - 190;
 		splitPane.setDividerLocation(pos);
 	}
 }
