@@ -3,7 +3,7 @@ package com.maspain.chitchat;
 import java.awt.EventQueue;
 
 
-public class Main {
+public class ChitChat {
 	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
