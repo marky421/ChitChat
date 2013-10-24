@@ -34,12 +34,10 @@ public class Login extends JFrame {
 	private JButton btnLogin;
 	private JLabel lblPort;
 	private JLabel lblIPAddressDescription;
-
 	private JComboBox<String> channelList;
 	
-	/**
-	 * Create the frame.
-	 */
+	private String defaultServer = "server.maspain.com";
+	
 	public Login() {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -90,7 +88,7 @@ public class Login extends JFrame {
 		contentPane.add(lblIpAddress, gbc_lblIpAddress);
 		
 		txtAddress = new JTextField();
-		txtAddress.setText("maspain.dyndns-web.com");
+		txtAddress.setText(defaultServer);
 		GridBagConstraints gbc_txtAddress = new GridBagConstraints();
 		gbc_txtAddress.fill = GridBagConstraints.HORIZONTAL;
 		gbc_txtAddress.insets = new Insets(0, 0, 5, 0);

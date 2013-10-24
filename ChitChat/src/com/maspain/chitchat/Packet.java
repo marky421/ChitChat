@@ -1,6 +1,5 @@
 package com.maspain.chitchat;
 
-
 public class Packet {
 	
 	private String command;
@@ -13,6 +12,13 @@ public class Packet {
 	public static final String DISCONNECT = "DISCONNECT";
 	
 	private final String delimiter = "||";
+	
+	public Packet(Packet packet) {
+		this.command = packet.getCommand();
+		this.sender = packet.getSender();
+		this.message = packet.getMessage();
+		this.data = packet.getData();
+	}
 	
 	public Packet(String data) {
 		this.data = data;
@@ -58,7 +64,8 @@ public class Packet {
 					case 1:
 						sender = data.substring(lastPos, i);
 						break;
-					default: break;
+					default:
+						break;
 				}
 				
 				lastPos = i + delimiter.length();

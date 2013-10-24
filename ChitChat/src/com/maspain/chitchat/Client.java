@@ -3,6 +3,8 @@ package com.maspain.chitchat;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import java.awt.Color;
 import java.awt.GridBagLayout;
@@ -58,7 +60,6 @@ public class Client extends JFrame implements Runnable {
 	private String name, address;
 	private int port;
 	private JScrollPane scrollPaneHistory;
-	//private JTextArea txtHistory;	// JTextArea does not support font styling
 	private ColorPane txtHistory;
 	private JTextArea txtOnlineUsers;
 	private JButton btnSend;
@@ -89,75 +90,7 @@ public class Client extends JFrame implements Runnable {
 
 		createWindow();
 		connectToServer();
-
-		// Add new functionality by adding a new key binding to "shift ENTER"
-		// We want to be able to press "shift ENTER" to generate a new line in the message
-		Action newLineOnShiftEnter = new AbstractAction() {
-			
-			private static final long serialVersionUID = 1L;
-			
-			public void actionPerformed(ActionEvent e) {
-				txtMessage.append("\n");
-			}
-		};
-		String newLineKeyStrokeAndKey = "shift ENTER";
-		KeyStroke newLineKeyStroke = KeyStroke.getKeyStroke(newLineKeyStrokeAndKey);
-		txtMessage.getInputMap(JComponent.WHEN_FOCUSED).put(newLineKeyStroke, newLineKeyStrokeAndKey);
-		txtMessage.getActionMap().put(newLineKeyStrokeAndKey, newLineOnShiftEnter);
-		
-		// Replace the functionality of the "ENTER" key stroke so that it sends the message
-		// rather than generate a new line in the message to be sent
-		Action sendOnEnter = new AbstractAction() {
-			
-			private static final long serialVersionUID = 1L;
-			
-			public void actionPerformed(ActionEvent e) {
-				try {
-					processMessage(txtMessage.getText());
-				}
-				catch (NullPointerException ne) {
-					System.out.println("message is empty. exception: " + ne);
-				}
-			}
-		};
-		KeyStroke sendKeyStroke = KeyStroke.getKeyStroke("ENTER");
-		InputMap im = txtMessage.getInputMap(JComponent.WHEN_FOCUSED);
-		txtMessage.getActionMap().put(im.get(sendKeyStroke), sendOnEnter);
-		
-		// Attach the send action to the send button
-		btnSend.addActionListener(new ActionListener() {
-			
-			public void actionPerformed(ActionEvent e) {
-				try {
-					processMessage(txtMessage.getText());
-				}
-				catch (NullPointerException ne) {
-					System.out.println("message is empty. exception: " + ne);
-				}
-			}
-		});
-		
-		// Attach clear history action to clear button
-		btnClear.addActionListener(new ActionListener() {
-			
-			public void actionPerformed(ActionEvent e) {
-				txtHistory.setText("");
-			}
-		});
-		
-		// Attach channel switching action to channel list pulldown menu
-		Action changeChannel = new AbstractAction() {
-			
-			private static final long serialVersionUID = 1L;
-
-			public void actionPerformed(ActionEvent e) {
-				switchToPort(channelList.getSelectedIndex() + portOffset);
-			}
-		};
-		
-		channelList.addActionListener(changeChannel);
-		
-
+		setBehaviors();	
 	}
 	
 	private void connectToServer() {
@@ -189,7 +122,7 @@ public class Client extends JFrame implements Runnable {
 	private void switchToPort(int port) {
 		leave();
 		dispose();
-		new Client(this.name, this.address, port);
+		new Client(name, address, port);
 	}
 	
 	// Gets called when the user types something
@@ -227,61 +160,59 @@ public class Client extends JFrame implements Runnable {
 	
 	// Background thread runs this: show messages from other window
 	public void run() {
-		try {
-
-			// Receive messages one-by-one, forever
-			while (true) {
-
+		String data;
+		
+		// Receive messages one-by-one, forever
+		while (true) {
+			try {
 				// Get the next data string
-				String data = din.readUTF();
-				
-				Packet packet = new Packet(data);
-				
-				if (packet.getMessage() == null) {
+				data = din.readUTF();
+			} catch (IOException ie) {
+					ie.printStackTrace();
 					continue;
-				}
-				
-				// Print a time stamp for the current message, then print the name of the sender
-				txtHistory.append(Color.darkGray, "(" + getTimeStamp() + ") ");
-				txtHistory.append(Color.blue, packet.getSender());
-				
-				if (packet.getCommand().equals(Packet.CONNECT)) {
-					// Print welcome message to our text window
-					txtHistory.append(new Color(green), arrivedMessage + "\n");
-					
-					// Refresh the list of online users
-					txtOnlineUsers.setText(packet.getMessage());
-					
-					// Play hello sound
-					Sound.sound_beeps.play();
-				}
-				else if (packet.getCommand().equals(Packet.DISCONNECT)) {
-					// Print goodbye message to our text window
-					txtHistory.append(Color.red, leavingMessage + "\n");
-					
-					// Refresh the list of online users
-					txtOnlineUsers.setText(packet.getMessage());
-					
-					// Play goodbye sound
-					Sound.sound_click.play();
-				}
-				else if (packet.getCommand().equals(Packet.MESSAGE)) {		
-					// Append colon for message styling
-					txtHistory.append(Color.blue, ":  ");
-					
-					// Print message to our text window
-					txtHistory.append(Color.black, packet.getMessage() + "\n");
-					
-					// Play a sound to indicate that a message has been received
-					Sound.sound_pop.play();
-				}
-				
-				// Set the caret position to the bottom of the message history field
-				txtHistory.setCaretPosition(txtHistory.getDocument().getLength());
 			}
-		}
-		catch (IOException ie) {
-			ie.printStackTrace();
+			
+			Packet packet = new Packet(data);
+			
+			if (packet.getMessage() == null) continue;
+			
+			// Print a time stamp for the current message, then print the name of the sender
+			txtHistory.append(Color.darkGray, "(" + getTimeStamp() + ") ");
+			txtHistory.append(Color.blue, packet.getSender());
+			
+			if (packet.getCommand().equals(Packet.CONNECT)) {
+				// Print welcome message to our text window
+				txtHistory.append(new Color(green), arrivedMessage + "\n");
+				
+				// Refresh the list of online users
+				txtOnlineUsers.setText(packet.getMessage());
+				
+				// Play hello sound
+				Sound.sound_beeps.play();
+			}
+			else if (packet.getCommand().equals(Packet.DISCONNECT)) {
+				// Print goodbye message to our text window
+				txtHistory.append(Color.red, leavingMessage + "\n");
+				
+				// Refresh the list of online users
+				txtOnlineUsers.setText(packet.getMessage());
+				
+				// Play goodbye sound
+				Sound.sound_click.play();
+			}
+			else if (packet.getCommand().equals(Packet.MESSAGE)) {		
+				// Append colon for message styling
+				txtHistory.append(Color.blue, ":  ");
+				
+				// Print message to our text window
+				txtHistory.append(Color.black, packet.getMessage() + "\n");
+				
+				// Play a sound to indicate that a message has been received
+				Sound.sound_pop.play();
+			}
+			
+			// Set the caret position to the bottom of the message history field
+			txtHistory.setCaretPosition(txtHistory.getDocument().getLength());
 		}
 	}
 	
@@ -337,11 +268,6 @@ public class Client extends JFrame implements Runnable {
 		scrollPaneHistory = new JScrollPane();
 		splitPane.setLeftComponent(scrollPaneHistory);
 		
-		// for using JTextArea (does not support font styles)
-		//txtHistory = new JTextArea();
-		//txtHistory.setTabSize(4);
-		//txtHistory.setWrapStyleWord(true);
-		//txtHistory.setLineWrap(true);
 		txtHistory = new ColorPane();
 		scrollPaneHistory.setViewportView(txtHistory);
 		txtHistory.setEditable(false);
@@ -405,5 +331,77 @@ public class Client extends JFrame implements Runnable {
 		setVisible(true);
 		int pos = width - 190;
 		splitPane.setDividerLocation(pos);
+	}
+	
+	public void setBehaviors() {
+		// Add new functionality by adding a new key binding to "shift ENTER"
+		// We want to be able to press "shift ENTER" to generate a new line in the message
+		Action newLineOnShiftEnter = new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			public void actionPerformed(ActionEvent e) {
+				txtMessage.append("\n");
+			}
+		};
+		String newLineKeyStrokeAndKey = "shift ENTER";
+		KeyStroke newLineKeyStroke = KeyStroke.getKeyStroke(newLineKeyStrokeAndKey);
+		txtMessage.getInputMap(JComponent.WHEN_FOCUSED).put(newLineKeyStroke, newLineKeyStrokeAndKey);
+		txtMessage.getActionMap().put(newLineKeyStrokeAndKey, newLineOnShiftEnter);
+		
+		// Replace the functionality of the "ENTER" key stroke so that it sends the message
+		// rather than generate a new line in the message to be sent
+		Action sendOnEnter = new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			public void actionPerformed(ActionEvent e) {
+				try {
+					processMessage(txtMessage.getText());
+				}
+				catch (NullPointerException ne) {
+					System.out.println("message is empty. exception: " + ne);
+				}
+			}
+		};
+		KeyStroke sendKeyStroke = KeyStroke.getKeyStroke("ENTER");
+		InputMap im = txtMessage.getInputMap(JComponent.WHEN_FOCUSED);
+		txtMessage.getActionMap().put(im.get(sendKeyStroke), sendOnEnter);
+
+		// Attach the send action to the send button
+		btnSend.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					processMessage(txtMessage.getText());
+				}
+				catch (NullPointerException ne) {
+					System.out.println("message is empty. exception: " + ne);
+				}
+			}
+		});
+		
+		// Attach clear history action to clear button
+		btnClear.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				txtHistory.setText("");
+			}
+		});
+		
+		// Attach channel switching action to channel list pulldown menu
+		channelList.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				switchToPort(channelList.getSelectedIndex() + portOffset);
+			}
+		});
+
+		final String userName = name;
+		txtMessage.getDocument().addDocumentListener(new DocumentListener() {
+			public void insertUpdate(DocumentEvent e) {
+				System.out.println(userName + " is typing...");
+			}
+
+			public void removeUpdate(DocumentEvent e) {
+				System.out.println(userName + " is finished typing...");
+			}
+
+			public void changedUpdate(DocumentEvent e) {
+			}
+		});
 	}
 }

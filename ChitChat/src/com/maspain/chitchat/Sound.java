@@ -3,7 +3,6 @@ package com.maspain.chitchat;
 import java.applet.Applet;
 import java.applet.AudioClip;
 
-
 public class Sound {
 	
 	private static String path = "/sounds/";
