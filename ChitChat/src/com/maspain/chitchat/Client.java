@@ -143,7 +143,7 @@ public class Client extends JFrame implements Runnable {
 	}
 	
 	private String getTimeStamp() {
-		// Create a time stamp for the current message, and attach it to the message
+		// Create a time stamp
 		String timeStamp = new SimpleDateFormat("hh:mm:ss aaa").format(Calendar.getInstance().getTime());
 		return timeStamp;
 	}
