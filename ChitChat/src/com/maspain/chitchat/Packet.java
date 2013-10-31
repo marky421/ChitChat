@@ -10,6 +10,7 @@ public class Packet {
 	public static final String MESSAGE = "MESSAGE";
 	public static final String CONNECT = "CONNECT";
 	public static final String DISCONNECT = "DISCONNECT";
+	public static final String TYPING = "TYPING";
 	
 	private final String delimiter = "||";
 	
@@ -26,7 +27,7 @@ public class Packet {
 	}
 	
 	public Packet(String command, String sender, String message) {
-		if (!(command.equals(MESSAGE) || command.equals(CONNECT) || command.equals(DISCONNECT))) {
+		if (!(command.equals(MESSAGE) || command.equals(CONNECT) || command.equals(DISCONNECT) || command.equals(TYPING))) {
 			System.out.println("Invalid command");
 			return;
 		}

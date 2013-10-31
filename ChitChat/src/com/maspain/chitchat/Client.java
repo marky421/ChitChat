@@ -37,6 +37,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -49,7 +52,7 @@ public class Client extends JFrame implements Runnable {
 	private String version = "1.4";
 	private String title = "ChitChat Client v" + version + " | Channel: ";
 	private int height = 530;
-	private int width =  600;
+	private int width = 600;
 	private int portOffset = 50000;
 	private String arrivedMessage = " has entered the room";
 	private String leavingMessage = " has left the room";
@@ -57,19 +60,10 @@ public class Client extends JFrame implements Runnable {
 	private int green = 0x07BA07;
 	
 	private JPanel contentPane;
-	private String name, address;
-	private int port;
 	private JScrollPane scrollPaneHistory;
 	private ColorPane txtHistory;
 	private JTextArea txtOnlineUsers;
 	private JButton btnSend;
-	
-	// The Socket connection us to the server
-	private Socket socket;
-	
-	// The streams we communicate to the server; these come from the socket
-	private DataInputStream din;
-	private DataOutputStream dout;
 	private JComboBox<String> channelList;
 	private JScrollPane scrollPaneOnlineUsers;
 	private JLabel lblOnline;
@@ -77,9 +71,21 @@ public class Client extends JFrame implements Runnable {
 	private JTextArea txtMessage;
 	private JButton btnClear;
 	
+	private String name;
+	private String address;
+	private int port;
+	private boolean isTyping = false;
+	private boolean wasTyping = false;
+	
+	// The Socket connection us to the server
+	private Socket socket;
+	
+	// The streams we communicate to the server; these come from the socket
+	private DataInputStream din;
+	private DataOutputStream dout;
 	
 	public Client(String name, String address, int port) {
-
+		
 		this.name = name;
 		this.address = address;
 		this.port = port;
@@ -87,10 +93,10 @@ public class Client extends JFrame implements Runnable {
 		int channel = port - portOffset + 1;
 		
 		setTitle(title + channel);
-
+		
 		createWindow();
 		connectToServer();
-		setBehaviors();	
+		setBehaviors();
 	}
 	
 	private void connectToServer() {
@@ -107,15 +113,22 @@ public class Client extends JFrame implements Runnable {
 			// Start a background thread for receiving messages
 			new Thread(this).start();
 			
-			// Prepare the data packet for sending as a new connection 
+			// Prepare the data packet for sending as a new connection
 			Packet packet = new Packet(Packet.CONNECT, name, arrivedMessage);
-
-			// Let everyone know you're here!
-			dout.writeUTF(packet.getData());
 			
-		}
-		catch (IOException ie) {
+			// Let everyone know you're here!
+			send(packet);
+			
+		} catch (IOException ie) {
 			ie.printStackTrace();
+		}
+	}
+	
+	private void send(Packet packet) {
+		try {
+			dout.writeUTF(packet.getData());
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -127,19 +140,14 @@ public class Client extends JFrame implements Runnable {
 	
 	// Gets called when the user types something
 	private void processMessage(String message) {
-		try {
-			// Prepare the data packet for sending as a message
-			Packet packet = new Packet(Packet.MESSAGE, name, message);
-			
-			// Send the message with the time stamp and the name of the sender to the server
-			dout.writeUTF(packet.getData());
-			
-			// Clear out the text input field
-			txtMessage.setText("");
-		}
-		catch (IOException ie) {
-			System.out.println(ie);
-		}
+		// Prepare the data packet for sending as a message
+		Packet packet = new Packet(Packet.MESSAGE, name, message);
+		
+		// Send the message with the time stamp and the name of the sender to the server
+		send(packet);
+		
+		// Clear out the text input field
+		txtMessage.setText("");
 	}
 	
 	private String getTimeStamp() {
@@ -150,12 +158,7 @@ public class Client extends JFrame implements Runnable {
 	
 	private void leave() {
 		Packet packet = new Packet(Packet.DISCONNECT, name, leavingMessage);
-		try {
-			dout.writeUTF(packet.getData());
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		send(packet);
 	}
 	
 	// Background thread runs this: show messages from other window
@@ -168,13 +171,17 @@ public class Client extends JFrame implements Runnable {
 				// Get the next data string
 				data = din.readUTF();
 			} catch (IOException ie) {
-					ie.printStackTrace();
-					continue;
+				ie.printStackTrace();
+				continue;
 			}
 			
 			Packet packet = new Packet(data);
 			
 			if (packet.getMessage() == null) continue;
+			else if (packet.getCommand().equals(Packet.TYPING)) {
+				txtOnlineUsers.setText(packet.getMessage());
+				continue;
+			}
 			
 			// Print a time stamp for the current message, then print the name of the sender
 			txtHistory.append(Color.darkGray, "(" + getTimeStamp() + ") ");
@@ -200,7 +207,7 @@ public class Client extends JFrame implements Runnable {
 				// Play goodbye sound
 				Sound.sound_click.play();
 			}
-			else if (packet.getCommand().equals(Packet.MESSAGE)) {		
+			else if (packet.getCommand().equals(Packet.MESSAGE)) {
 				// Append colon for message styling
 				txtHistory.append(Color.blue, ":  ");
 				
@@ -220,25 +227,29 @@ public class Client extends JFrame implements Runnable {
 		
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		}
-		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
 			e.printStackTrace();
 		}
-
 		
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		WindowListener exitListener = new WindowListener() {
+			
 			public void windowClosing(WindowEvent e) {
 				leave();
 				dispose();
 				System.exit(0);
 			}
-
+			
 			public void windowOpened(WindowEvent e) {}
+			
 			public void windowClosed(WindowEvent e) {}
+			
 			public void windowIconified(WindowEvent e) {}
+			
 			public void windowDeiconified(WindowEvent e) {}
+			
 			public void windowActivated(WindowEvent e) {}
+			
 			public void windowDeactivated(WindowEvent e) {}
 		};
 		addWindowListener(exitListener);
@@ -250,8 +261,8 @@ public class Client extends JFrame implements Runnable {
 		setContentPane(contentPane);
 		
 		GridBagLayout gbl_contentPane = new GridBagLayout();
-		gbl_contentPane.columnWidths = new int[] {0, 0, 0, 0};
-		gbl_contentPane.rowHeights = new int[] {0, 0};
+		gbl_contentPane.columnWidths = new int[] { 0, 0, 0, 0 };
+		gbl_contentPane.rowHeights = new int[] { 0, 0 };
 		gbl_contentPane.columnWeights = new double[] { 1.0, 0.0, 0.0, 0.0 };
 		gbl_contentPane.rowWeights = new double[] { 1.0, 0.0 };
 		contentPane.setLayout(gbl_contentPane);
@@ -278,7 +289,7 @@ public class Client extends JFrame implements Runnable {
 		
 		txtOnlineUsers = new JTextArea();
 		txtOnlineUsers.setTabSize(4);
-		txtOnlineUsers.setFont(new Font("Helvetica Neue", Font.PLAIN, 16));
+		txtOnlineUsers.setFont(new Font("Menlo", Font.PLAIN, 16));
 		txtOnlineUsers.setEditable(false);
 		txtOnlineUsers.setBackground(Color.WHITE);
 		scrollPaneOnlineUsers.setViewportView(txtOnlineUsers);
@@ -319,7 +330,7 @@ public class Client extends JFrame implements Runnable {
 		contentPane.add(btnClear, gbc_btnClear);
 		
 		channelList = new JComboBox<String>();
-		channelList.setModel(new DefaultComboBoxModel<String>(new String[] {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
+		channelList.setModel(new DefaultComboBoxModel<String>(new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" }));
 		channelList.setSelectedIndex(port - portOffset);
 		GridBagConstraints gbc_channelList = new GridBagConstraints();
 		gbc_channelList.fill = GridBagConstraints.BOTH;
@@ -327,7 +338,7 @@ public class Client extends JFrame implements Runnable {
 		gbc_channelList.gridx = 3;
 		gbc_channelList.gridy = 1;
 		contentPane.add(channelList, gbc_channelList);
-
+		
 		setVisible(true);
 		int pos = width - 190;
 		splitPane.setDividerLocation(pos);
@@ -337,7 +348,9 @@ public class Client extends JFrame implements Runnable {
 		// Add new functionality by adding a new key binding to "shift ENTER"
 		// We want to be able to press "shift ENTER" to generate a new line in the message
 		Action newLineOnShiftEnter = new AbstractAction() {
+			
 			private static final long serialVersionUID = 1L;
+			
 			public void actionPerformed(ActionEvent e) {
 				txtMessage.append("\n");
 			}
@@ -350,7 +363,9 @@ public class Client extends JFrame implements Runnable {
 		// Replace the functionality of the "ENTER" key stroke so that it sends the message
 		// rather than generate a new line in the message to be sent
 		Action sendOnEnter = new AbstractAction() {
+			
 			private static final long serialVersionUID = 1L;
+			
 			public void actionPerformed(ActionEvent e) {
 				try {
 					processMessage(txtMessage.getText());
@@ -363,9 +378,10 @@ public class Client extends JFrame implements Runnable {
 		KeyStroke sendKeyStroke = KeyStroke.getKeyStroke("ENTER");
 		InputMap im = txtMessage.getInputMap(JComponent.WHEN_FOCUSED);
 		txtMessage.getActionMap().put(im.get(sendKeyStroke), sendOnEnter);
-
+		
 		// Attach the send action to the send button
 		btnSend.addActionListener(new ActionListener() {
+			
 			public void actionPerformed(ActionEvent e) {
 				try {
 					processMessage(txtMessage.getText());
@@ -378,6 +394,7 @@ public class Client extends JFrame implements Runnable {
 		
 		// Attach clear history action to clear button
 		btnClear.addActionListener(new ActionListener() {
+			
 			public void actionPerformed(ActionEvent e) {
 				txtHistory.setText("");
 			}
@@ -385,23 +402,39 @@ public class Client extends JFrame implements Runnable {
 		
 		// Attach channel switching action to channel list pulldown menu
 		channelList.addActionListener(new ActionListener() {
+			
 			public void actionPerformed(ActionEvent e) {
 				switchToPort(channelList.getSelectedIndex() + portOffset);
 			}
 		});
-
-		final String userName = name;
+		
 		txtMessage.getDocument().addDocumentListener(new DocumentListener() {
+			
 			public void insertUpdate(DocumentEvent e) {
-				System.out.println(userName + " is typing...");
+				isTyping = true;
+				wasTyping = true;
 			}
-
+			
 			public void removeUpdate(DocumentEvent e) {
-				System.out.println(userName + " is finished typing...");
+				isTyping = false;
 			}
-
-			public void changedUpdate(DocumentEvent e) {
-			}
+			
+			public void changedUpdate(DocumentEvent e) {}
 		});
+		
+		Timer timer = new Timer();
+		TimerTask task = new TimerTask() {
+			
+			public void run() {
+				// TODO Auto-generated method stub
+				if (isTyping) send(new Packet(Packet.TYPING, name, "begin typing"));
+				else if (wasTyping) {
+					wasTyping = false;
+					send(new Packet(Packet.TYPING, name, "end typing"));
+				}
+			}
+		};
+		
+		timer.scheduleAtFixedRate(task, 0, 1000);
 	}
 }
