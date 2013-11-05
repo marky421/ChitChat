@@ -49,8 +49,7 @@ public class Client extends JFrame implements Runnable {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private String version = "1.4";
-	private String title = "ChitChat Client v" + version + " | Channel: ";
+	private String title = "ChitChat Client  |  Channel: ";
 	private int height = 530;
 	private int width = 600;
 	private int portOffset = 50000;
